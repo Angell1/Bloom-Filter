@@ -1,0 +1,94 @@
+#include <stdio.h>
+
+#define Size 100
+#define BitSIZE Size * 4 * 8
+
+//c语言中一个整型数据类型4个字节  
+int bit[Size]={0};
+
+    
+int SDBMHash(char *str)
+{
+    unsigned int hash = 0;
+    while (*str)
+    {
+        // equivalent to: hash = 65599*hash + (*str++);
+        hash = (*str++) + (hash << 6) + (hash << 16) - hash;
+    }
+    return (hash & 0x7FFFFFFF);
+}
+
+int RSHash(char *str)
+{
+    unsigned int b = 378551;
+    unsigned int a = 63689;
+    unsigned int hash = 0;
+ 
+    while (*str)
+    {
+        hash = hash * a + (*str++);
+        a *= b;
+    }
+ 
+    return (hash & 0x7FFFFFFF);
+}
+
+int JSHash(char *str)
+{
+    unsigned int hash = 1315423911;
+ 
+    while (*str)
+    {
+        hash ^= ((hash << 5) + (*str++) + (hash >> 2));
+    }
+ 
+    return (hash & 0x7FFFFFFF);
+}
+
+
+void Insert(int hash){
+    
+    //int value = hash%BitSIZE; ([0-3200]范围的值)
+    //int listindex = value / 32; (listindex为数组下标)
+    //int bitindex = value % 32; (某位)
+    
+    int value = hash%BitSIZE;
+    int listindex = value / 32;
+    int bitindex = value % 32;
+    int temp = bit[listindex];
+    bit[listindex] = bit[listindex] & (1 << bitindex);
+    bit[listindex] = bit[listindex] | temp;
+}
+
+int Serach(int hash){
+    int value = hash%BitSIZE;
+    int listindex = value / 32;
+    int bitindex = value % 32;
+    if (bit[listindex] | (1 << bitindex)){
+        return 1;
+    }
+    return 0;
+}
+
+
+
+int main () {
+    
+    char str1[] = "abc123";
+    
+    //在布隆过滤器中插入某值
+    Insert(SDBMHash(str1));
+    Insert(RSHash(str1));
+    Insert(JSHash(str1));
+    
+    //在布隆过滤器中判断某值是否存在
+    int i = 0;
+    i = i+Serach(SDBMHash(str1));
+    i = i+Serach(RSHash(str1));
+    i = i+Serach(JSHash(str1));
+    if(i == 3){
+        printf("字符串：%s存在\n",str1);
+    }
+
+    return 0;
+}
